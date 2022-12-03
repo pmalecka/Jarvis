@@ -1,8 +1,7 @@
 #ifndef JARVISDESK_H
 #define JARVISDESK_H
 
-#include "HandsetHandler.h"
-#include "ControlboxHandler.h"
+#include "CombinedHandler.h"
 #include "Timer.h"
 #include "esphome.h"
 
@@ -13,9 +12,6 @@ enum LedState
     On,
     Off
 };
-
-// const HandsetMode defaultHandsetMode = HandsetMode::Factory;
-// const LedState defaultLedState = LedState::On;
 
 struct Settings
 {
@@ -125,8 +121,7 @@ public:
     void setup() override;
     void loop() override;
 
-    void handleHandset();
-    void handleControlbox();
+    void handleCombined();
 
     void processResponse(uint32_t duration=100);
 
@@ -135,12 +130,12 @@ public:
 
     void wakeUp();
     void requestAllSettings();
-    void requestSystemLimits();
+    //void requestSystemLimits();
     void extractSetting(const SerialMessage& msg);
-    void requestUserLimits();
+    //void requestUserLimits();
     void setOffset(uint16_t offset);
     void move(uint16_t height);
-    void turnLedsOff();
+    //void turnLedsOff();
     
     void setUnits(const char* value);
     void setTouchMode(const char* value);
@@ -163,7 +158,7 @@ public:
     void clearMaxHeight();
     void clearMinHeight();
     
-    void setDisplayNumber(uint16_t val);
+    // void setDisplayNumber(uint16_t val);
     
     sensor::Sensor* sPreset1;
     sensor::Sensor* sPreset2;
@@ -186,8 +181,7 @@ public:
 private:
     Settings mSettings;
 
-    HandsetHandler mHandset;
-    ControlboxHandler mControlbox;
+    CombinedHandler mCombined;
 };
 
 #endif   // JARVISDESK_H

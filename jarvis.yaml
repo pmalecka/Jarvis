@@ -11,10 +11,8 @@ esphome:
   includes:
     - jarvis/include/JarvisDesk.h
     - jarvis/src/JarvisDesk.cpp
-    - jarvis/include/HandsetHandler.h
-    - jarvis/src/HandsetHandler.cpp
-    - jarvis/include/ControlboxHandler.h
-    - jarvis/src/ControlboxHandler.cpp
+    - jarvis/include/CombinedHandler.h
+    - jarvis/src/CombinedHandler.cpp
     - jarvis/include/SerialDevice.h
     - jarvis/src/SerialDevice.cpp
     - jarvis/include/SerialMessage.h
@@ -23,9 +21,7 @@ esphome:
     - jarvis/src/utils.cpp
     - jarvis/include/Timer.h
     - jarvis/src/Timer.cpp
-  libraries:
-    - espsoftwareserial
-    
+  libraries:    
   
 wifi:
   ssid: !secret wifi_ssid
@@ -103,12 +99,12 @@ sensor:
     id: sys_limit_max
   - platform: dht
     model: DHT11
-    pin: D3
-    temperature:
-      name: "Room Temperature"
-    humidity:
-      name: "Room Humidity"
-    update_interval: 60s
+    # pin: D3
+    # temperature:
+    #   name: "Room Temperature"
+    # humidity:
+    #   name: "Room Humidity"
+    # update_interval: 60s
 
 text_sensor:
   - platform: template
@@ -173,15 +169,6 @@ number:
     step: 1
     set_action:
       - lambda: (*reinterpret_cast<JarvisDesk*>(id(desk))).setOffset(x);
-  - platform: template
-    name: "$name Display number"
-    id: display_number
-    optimistic: true
-    min_value: 1
-    max_value: 1800
-    step: 1
-    set_action:
-      - lambda: (*reinterpret_cast<JarvisDesk*>(id(desk))).setDisplayNumber(x*10);
 
 button:
   - platform: template

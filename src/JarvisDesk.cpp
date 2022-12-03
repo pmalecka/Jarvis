@@ -11,8 +11,7 @@ JarvisDesk::JarvisDesk()
 
 void JarvisDesk::setup()
 {
-    mControlbox.setup();
-    mHandset.setup();
+    mCombined.setup();
 
     wakeUp();
     delay((long unsigned int)70);
@@ -22,11 +21,9 @@ void JarvisDesk::setup()
 
 void JarvisDesk::loop()
 {
-    mControlbox.loop();
-    mHandset.loop();
+    mCombined.loop();
 
-    handleHandset();
-    handleControlbox();
+    handleCombined();
     
     if (!mSettings and T1.isFinished())
     {
@@ -36,39 +33,7 @@ void JarvisDesk::loop()
     }
 }
 
-void JarvisDesk::handleHandset()
-{
-    SerialMessage inMsg;
-    if (not mHandset.fetchMessage(inMsg))
-    {
-        return;
-    }
-    
-    // ESP_LOGI("TAG", "%s", inMsg.toString().c_str());
-    
-    // On powerup make the handset stop sending wake commands.
-    switch(inMsg.getType())
-    {
-    case CommandFromHandsetType::SetPreset1:
-    case CommandFromHandsetType::SetPreset2:
-    case CommandFromHandsetType::SetPreset3:
-    case CommandFromHandsetType::SetPreset4:
-    case CommandFromHandsetType::SetUnits:
-    case CommandFromHandsetType::SetOffset:
-    case CommandFromHandsetType::SetTouchMode:
-    case CommandFromHandsetType::SetSensitivity:
-    case CommandFromHandsetType::SetMaxHeight:
-    case CommandFromHandsetType::SetMinHeight:
-    case CommandFromHandsetType::ClearMinMax:
-        sendMessage(inMsg);
-        requestAllSettings();
-        break;
-    default:
-        sendMessage(inMsg);  // handset->controlbox uninterrupted
-    }
-}
-
-void JarvisDesk::handleControlbox()
+void JarvisDesk::handleCombined()
 {
     SerialMessage inMsg;
     if (not mControlbox.fetchMessage(inMsg))
@@ -79,8 +44,6 @@ void JarvisDesk::handleControlbox()
     // ESP_LOGI("TAG", "%s", inMsg.toString().c_str());
 
     extractSetting(inMsg);
-
-    mHandset.handleCBMessage(inMsg);
 }
 
 void JarvisDesk::extractSetting(const SerialMessage& msg)
@@ -166,11 +129,12 @@ void JarvisDesk::sendMessage(const SerialMessage& msg, uint8_t reps)
     switch (msg.getSourceId())
     {
     case SourceType::Handset:
-        mControlbox.sendMessage(msg, reps);
+        mCombined.sendMessage(msg, reps);
         break;
-    case SourceType::Controlbox:
-        mHandset.sendMessage(msg, reps);
-        break;
+    // this will not work, we are not connected to handset, we are the handset    
+    // case SourceType::Controlbox:
+    //     mCombined.sendMessage(msg, reps);
+    //     break;
     default:
         break;
     }
@@ -369,10 +333,5 @@ void JarvisDesk::clearMinHeight()
 {
     sendMessage(SerialMessage(CommandFromHandsetType::ClearMinMax,
                               static_cast<uint8_t>(0x02)));
-}
- 
-void JarvisDesk::setDisplayNumber(uint16_t val)
-{
-    mHandset.setDisplayValue(val);
 }
  
