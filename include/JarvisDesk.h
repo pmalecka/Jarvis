@@ -3,15 +3,10 @@
 
 #include "CombinedHandler.h"
 #include "Timer.h"
+#include "utils.h"
 #include "esphome.h"
 
 using namespace esphome;
-
-enum LedState
-{
-    On,
-    Off
-};
 
 struct Settings
 {
@@ -48,8 +43,9 @@ struct Settings
         /  = conversion = 649 / 10123 = 0.0641 mm
         /  height = sysLimitMin + (raw - sysLimitMin) * conversion
         */
+        
         uint16_t height_mm = sysLimitMin + round((float)(raw - 0x13F5) * 0.0642f);
-        return units == UnitsValue::mm ? height_mm : round((float)height_mm * 0.393f);
+        return units == UnitsValue::inch ? round((float)height_mm * 0.393f) : height_mm;
     }
 
     uint16_t getPreset1() { return raw2Height(presetRaw1); }
@@ -78,38 +74,37 @@ struct Settings
 
     operator bool() const
     {
-        return presetRaw1
-               && presetRaw2
-               && presetRaw3
-               && presetRaw4
-               && units != UnitsValue::Unkown
-               && touchMode != TouchModeValue::Unkown
-               && killMode != KillModeValue::Unkown
-               && sensitivity != SensitivityValue::Unkown
-               && sysLimitMin
-               && sysLimitMax
-               && userLimitSet != UserLimitSetValue::Unkown
-               && userLimitMin
-               && userLimitMax;
+        return presetRaw1 > 0
+            && presetRaw2 > 0
+            && presetRaw3 > 0
+            && presetRaw4 > 0
+            && units != UnitsValue::Unkown
+            && touchMode != TouchModeValue::Unkown
+            && killMode != KillModeValue::Unkown
+            && sensitivity != SensitivityValue::Unkown
+            && sysLimitMin > 0
+            && sysLimitMax > 0
+            && ((userLimitSet == UserLimitSetValue::Min && userLimitMin > 0)
+                || (userLimitSet == UserLimitSetValue::Max && userLimitMax > 0)
+                || (userLimitSet == UserLimitSetValue::Both && userLimitMin > 0 && userLimitMax > 0));
     }
     
-    /*
-    String toString()
-    {
-        return "preset1: " + String(getPreset1()) + "\n"
-               + "preset2: " + String(getPreset2()) + "\n"
-               + "preset3: " + String(getPreset3()) + "\n"
-               + "preset4: " + String(getPreset4()) + "\n"
-               + "units: " + valToString(units) + "\n"
-               + "touchMode: " + valToString(touchMode) + "\n"
-               + "killMode: " + valToString(killMode) + "\n"
-               + "sensitivity: " + valToString(sensitivity) + "\n"
-               + "sysLimitMin: " + String(sysLimitMin) + "\n"
-               + "sysLimitMax: " + String(sysLimitMax) + "\n"
-               + "userLimitSet: " + valToString(userLimitSet) + "\n"
-               + "userLimitMin: " + String(userLimitMin) + "\n"
-               + "userLimitMax: " + String(userLimitMax);
-    } */
+    // String toString()
+    // {
+    //     return "preset1: " + String(getPreset1()) + "\n"
+    //            + "preset2: " + String(getPreset2()) + "\n"
+    //            + "preset3: " + String(getPreset3()) + "\n"
+    //            + "preset4: " + String(getPreset4()) + "\n"
+    //            + "units: " + valToString(units) + "\n"
+    //            + "touchMode: " + valToString(touchMode) + "\n"
+    //            + "killMode: " + valToString(killMode) + "\n"
+    //            + "sensitivity: " + valToString(sensitivity) + "\n"
+    //            + "sysLimitMin: " + String(sysLimitMin) + "\n"
+    //            + "sysLimitMax: " + String(sysLimitMax) + "\n"
+    //            + "userLimitSet: " + valToString(userLimitSet) + "\n"
+    //            + "userLimitMin: " + String(userLimitMin) + "\n"
+    //            + "userLimitMax: " + String(userLimitMax);
+    // }
 };
 
 
@@ -128,6 +123,7 @@ public:
     void sendMessage(const SerialMessage& msg, uint8_t reps = 1);
     void sendMessage(const SerialMessage&& msg, uint8_t reps = 1);
 
+    void connect();
     void wakeUp();
     void requestAllSettings();
     //void requestSystemLimits();
@@ -170,6 +166,7 @@ public:
     sensor::Sensor* sUserLimitMax;
     
     text_sensor::TextSensor* sUserLimitSet;
+    text_sensor::TextSensor* sDeskInitialized;
     
     select::Select* sUnits;
     select::Select* sTouchMode;
@@ -180,6 +177,8 @@ public:
     
 private:
     Settings mSettings;
+
+    bool deskInitialized;
 
     CombinedHandler mCombined;
 };

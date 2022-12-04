@@ -47,6 +47,12 @@ enum CommandFromControlboxType : uint8_t
 
 enum CommandFromHandsetType : uint8_t
 {
+    // Rafos desk
+    GET_BASIC_SETTINGS              = 0xFE,
+    Stop                            = 0x2B,
+    Disconnect                      = 0x0A,
+
+    // Orig
     Up               = 0x01,
     Down             = 0x02,
     SetPreset1       = 0x03,
@@ -138,7 +144,7 @@ public:
     bool setParam(uint8_t p0, uint8_t p1);
     bool setParam(uint8_t p0, uint8_t p1, uint8_t p2);
     bool setParam(uint16_t p01);
-   
+    
     void getParamArray(uint8_t* params, uint8_t& paramSize) const;
     void setParamArray(uint8_t* params, uint8_t paramSize);
 

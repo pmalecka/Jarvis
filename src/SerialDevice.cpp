@@ -1,6 +1,7 @@
 #include "SerialDevice.h"
 #include "utils.h"
-// #include "TelnetLogger.h"
+
+#include "esphome.h"
 
 SerialDevice::SerialDevice(uint8_t id) 
     : mId(id), mPMSize(0), mSMState(StateMachineState::Start)
@@ -11,16 +12,13 @@ SerialDevice::~SerialDevice()
 {
 }
 
-void SerialDevice::sendPacket(
-    uint8_t* packet, size_t packetSize)
+void SerialDevice::sendPacket(uint8_t* packet, size_t packetSize)
 {
     write(packet, packetSize);
 }
 
 void SerialDevice::sendMessage(const SerialMessage& msg, uint8_t repetition)
 {
-    // Log.println("Out:", msg.toString());
-
     uint8_t packet[MAX_PACKET_SIZE];
     msg.construct(packet);
 
@@ -63,6 +61,7 @@ bool SerialDevice::fetchNextCommand(uint8_t* array, size_t& arraySize)
 
 bool SerialDevice::processData(uint8_t oktet)
 {
+    // esphome::ESP_LOGD("JarvisStateMachine", "Processing byte: %02X, current state: %02x", oktet, (int)mSMState);
     switch (mSMState)
     {
         case StateMachineState::Start:
@@ -76,6 +75,7 @@ bool SerialDevice::processData(uint8_t oktet)
             else
             {
                 mSMState = StateMachineState::Start;
+                esphome::ESP_LOGE("JarvisStateMachine", "Got UNexpected start octet %02x", oktet);
             }
             break;
         }
@@ -89,6 +89,7 @@ bool SerialDevice::processData(uint8_t oktet)
             else
             {
                 mSMState = StateMachineState::Start;
+                esphome::ESP_LOGE("JarvisStateMachine", "Got UNexpected Id octet %02x", oktet);
             }
             break;
         }
@@ -110,8 +111,7 @@ bool SerialDevice::processData(uint8_t oktet)
                 case 0x04: mSMState = StateMachineState::Param3; break;
                 default: 
                 {
-                    // Log.println("Discard in ParamSize: " + array2String(mPartialMessage, mPMSize)
-                    //              + " -- faulty byte: " + char2hex(oktet));
+                    esphome::ESP_LOGE("JarvisSerial", "ParamSize Validation Failed: %s --faulty byte: %s", array2String(mPartialMessage, mPMSize).c_str(), char2hex(oktet).c_str());
                     mSMState = StateMachineState::Start;
                 }
             }
@@ -157,8 +157,7 @@ bool SerialDevice::processData(uint8_t oktet)
             }
             else
             {
-                // Log.println("Discard: " + array2String(mPartialMessage, mPMSize)
-                //                + " -- faulty byte: " + char2hex(oktet) + " chk: " + char2hex(chk));
+                esphome::ESP_LOGE("JarvisSerial", "Checksum failed for message: %s expected: %s, got %s", array2String(mPartialMessage, mPMSize).c_str(), char2hex(chk).c_str(), char2hex(oktet).c_str());
                 mSMState = StateMachineState::Start;
             }
             break;

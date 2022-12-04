@@ -9,10 +9,10 @@ String char2hex(uint8_t c)
 
 String array2String(uint8_t *packet, size_t packetSize)
 {
-    String result;
+    String result = "";
     for (size_t i = 0; i < packetSize; ++i)
     {
-        result += char2hex(packet[i]) + " ";
+        result += char2hex(packet[i]) + ":";
     }
     return result;
 }

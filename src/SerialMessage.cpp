@@ -188,7 +188,7 @@ bool SerialMessage::setPacket(uint8_t* data, size_t dataSize)
 
     return true;
 }
-   
+
 bool SerialMessage::verifyPacket(uint8_t* data, size_t dataSize)
 {   
     uint8_t paramSize = data[3];
@@ -201,10 +201,9 @@ bool SerialMessage::verifyPacket(uint8_t* data, size_t dataSize)
     memcpy(params, data + 4, paramSize);
 
     return data[0] == data[1]
-           && (   data[0] == SourceType::Handset
-               || data[0] == SourceType::Controlbox)
-           && data[0] == data[1]
-           && dataSize == static_cast<size_t>(6 + paramSize)
-           && data[dataSize - 2] == computeChecksum(data[2], data[3], params)
-           && data[dataSize - 1] == 0x7E;
+        && (   data[0] == SourceType::Handset
+            || data[0] == SourceType::Controlbox)
+        && dataSize == static_cast<size_t>(6 + paramSize)
+        && data[dataSize - 2] == computeChecksum(data[2], data[3], params)
+        && data[dataSize - 1] == 0x7E;
 }
