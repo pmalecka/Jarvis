@@ -1,7 +1,9 @@
 #ifndef SERIALMESSAGE_H
 #define SERIALMESSAGE_H
 
-#include <Arduino.h>
+#include "utils.h"
+
+#include "esphome/core/helpers.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -112,7 +114,7 @@ public:
 
     virtual ~SerialMessage() {};
 
-    String toString() const;
+    std::string toString() const;
 
     uint8_t getType() const;
     void setType(uint8_t val);

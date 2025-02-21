@@ -1,7 +1,7 @@
 #ifndef Timer_h
 #define Timer_h
 
-#include <Arduino.h>
+#include "esphome.h"
 
 enum class TimerStateType: uint8_t
 {

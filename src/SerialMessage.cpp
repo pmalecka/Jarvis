@@ -1,4 +1,3 @@
-#include "utils.h"
 #include "SerialMessage.h"
 
 SerialMessage::SerialMessage()
@@ -60,7 +59,7 @@ SerialMessage::SerialMessage(
     mParams[3] = p3;
 }
 
-String SerialMessage::toString() const
+std::string SerialMessage::toString() const
 {
     uint8_t packet[MAX_PACKET_SIZE];
     construct(packet);

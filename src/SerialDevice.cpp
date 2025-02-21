@@ -4,59 +4,8 @@
 #include "esphome.h"
 
 SerialDevice::SerialDevice(uint8_t id) 
-    : mId(id), mPMSize(0), mSMState(StateMachineState::Start)
+    : mPMSize(0), mId(id), mSMState(StateMachineState::Start)
 {
-}
-
-SerialDevice::~SerialDevice()
-{
-}
-
-void SerialDevice::sendPacket(uint8_t* packet, size_t packetSize)
-{
-    write(packet, packetSize);
-}
-
-void SerialDevice::sendMessage(const SerialMessage& msg, uint8_t repetition)
-{
-    uint8_t packet[MAX_PACKET_SIZE];
-    msg.construct(packet);
-
-    for (int i = 0; i < repetition; ++i)
-        sendPacket(packet, msg.getPacketLength());
-}
-
-void SerialDevice::sendMessage(const SerialMessage&& msg, uint8_t repetition)
-{
-    sendMessage(msg, repetition);
-}
-
-bool SerialDevice::fetchMessage(SerialMessage& msg)
-{
-    uint8_t buffer[MAX_PACKET_SIZE]; 
-    size_t bufSize = 0;
-
-    bool succ = fetchNextCommand(buffer, bufSize);
-    succ = msg.setPacket(buffer, bufSize);   
-
-    return succ;
-}
-
-bool SerialDevice::fetchNextCommand(uint8_t* array, size_t& arraySize)
-{
-    bool isValid = false;
-    while (available() > 0 && !isValid)
-    {
-        int r = read();
-        isValid = processData(r);
-    }
-    
-    if (isValid)
-    {
-        memcpy(array, mPartialMessage, mPMSize);
-        arraySize = mPMSize;
-    }
-    return isValid;
 }
 
 bool SerialDevice::processData(uint8_t oktet)

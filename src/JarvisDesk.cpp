@@ -2,10 +2,12 @@
 #include "Timer.h"
 #include <math.h>
 #include <esp_task_wdt.h>
+#include "esp_err.h"
+#include "esphome.h"
 
 Timer Timer1(10000);
 
-JarvisDesk::JarvisDesk()
+JarvisDesk::JarvisDesk(esphome::uart::UARTComponent *parent) : esphome::uart::UARTDevice(parent), serialDecoder(SourceType::Controlbox)
 {
     mSettings.reset();
     deskInitialized = false;
@@ -13,10 +15,23 @@ JarvisDesk::JarvisDesk()
 
 void JarvisDesk::setup()
 {
+    //// warning - this never worked, no idea why it is here, lol
+    //// it definitely breaks the whole thing on idf 5 (new code below)
     // set the watchdog timeout to 30 seconds
-    esp_task_wdt_init(30, true);
+    /// old code, for esp-idf 4.4 and lower
+    // esp_task_wdt_init(30, true);
 
-    mCombined.setup();
+    /// new code for esp-idf 5
+    
+    // #define CONFIG_FREERTOS_NUMBER_OF_CORES 2
+    // #define WDT_TIMEOUT 30000
+    
+    // esp_task_wdt_config_t twdt_config = {
+    //     .timeout_ms = WDT_TIMEOUT,
+    //     .idle_core_mask = (1 << CONFIG_FREERTOS_NUMBER_OF_CORES) - 1,    // Bitmask of all cores
+    //     .trigger_panic = false,
+    // };
+    // ESP_ERROR_CHECK(esp_task_wdt_init(&twdt_config));
 
     wakeUp();
     esphome::delay((uint32_t)70);
@@ -59,9 +74,7 @@ void JarvisDesk::connect()
 
 void JarvisDesk::loop()
 {
-    mCombined.loop();
-
-    handleCombined();
+    handleIncomingData();
 
     // publish desk initialization state to HA
     if(mSettings && deskInitialized == false) {
@@ -84,10 +97,33 @@ void JarvisDesk::loop()
     }
 }
 
-void JarvisDesk::handleCombined()
+bool JarvisDesk::fetchMessage(SerialMessage& msg)
+{
+    uint8_t buffer[MAX_PACKET_SIZE]; 
+    size_t bufSize = 0;
+
+    bool isValid = false;
+    while (available() > 0 && !isValid)
+    {
+        int r = read();
+        isValid = serialDecoder.processData(r);
+    }
+    
+    if (isValid)
+    {
+        memcpy(buffer, serialDecoder.mPartialMessage, serialDecoder.mPMSize);
+        bufSize = serialDecoder.mPMSize;
+
+        return msg.setPacket(buffer, bufSize);
+    }
+
+    return false;
+}
+
+void JarvisDesk::handleIncomingData()
 {
     SerialMessage inMsg;
-    if (not mCombined.fetchMessage(inMsg))
+    if (not fetchMessage(inMsg))
     {
         return;
     }
@@ -95,8 +131,6 @@ void JarvisDesk::handleCombined()
     ESP_LOGV("JarvisSerial", "Incoming message: %s", inMsg.toString().c_str());
 
     extractSetting(inMsg);
-
-    mCombined.handleCBMessage(inMsg);
 }
 
 void JarvisDesk::extractSetting(const SerialMessage& msg)
@@ -105,29 +139,36 @@ void JarvisDesk::extractSetting(const SerialMessage& msg)
     {
     case CommandFromControlboxType::LocPreset1:
         ESP_LOGI("JarvisSerial", "Incoming message: LocPreset1 (%02x)", msg.getType());
-        mSettings.presetRaw1 = msg.getParam<uint16_t>(); break;
+        mSettings.presetRaw1 = msg.getParam<uint16_t>();
         ESP_LOGD("Jarvis", "presetRaw1 %u", (unsigned int)mSettings.presetRaw1);
+        break;
     case CommandFromControlboxType::LocPreset2:
         ESP_LOGI("JarvisSerial", "Incoming message: LocPreset2 (%02x)", msg.getType());
-        mSettings.presetRaw2 = msg.getParam<uint16_t>(); break;
+        mSettings.presetRaw2 = msg.getParam<uint16_t>();
         ESP_LOGD("Jarvis", "presetRaw2 %u", (unsigned int)mSettings.presetRaw2);
+        break;
     case CommandFromControlboxType::LocPreset3:
         ESP_LOGI("JarvisSerial", "Incoming message: LocPreset3 (%02x)", msg.getType());
-        mSettings.presetRaw3 = msg.getParam<uint16_t>(); break;
+        mSettings.presetRaw3 = msg.getParam<uint16_t>();
         ESP_LOGD("Jarvis", "presetRaw3 %u", (unsigned int)mSettings.presetRaw3);
+        break;
     case CommandFromControlboxType::LocPreset4:
         ESP_LOGI("JarvisSerial", "Incoming message: LocPreset4 (%02x)", msg.getType());
-        mSettings.presetRaw4 = msg.getParam<uint16_t>(); break;
+        mSettings.presetRaw4 = msg.getParam<uint16_t>();
         ESP_LOGD("Jarvis", "presetRaw4 %u", (unsigned int)mSettings.presetRaw4);
+        break;
     case CommandFromControlboxType::Units:
         ESP_LOGI("JarvisSerial", "Incoming message: Units (%02x)", msg.getType());
-        mSettings.units = msg.getParam<UnitsValue>(); break;
+        mSettings.units = msg.getParam<UnitsValue>();
+        break;
     case CommandFromControlboxType::TouchMode:
         ESP_LOGI("JarvisSerial", "Incoming message: TouchMode (%02x)", msg.getType());
-        mSettings.touchMode = msg.getParam<TouchModeValue>(); break;
+        mSettings.touchMode = msg.getParam<TouchModeValue>();
+        break;
     case CommandFromControlboxType::KillMode:
         ESP_LOGI("JarvisSerial", "Incoming message: KillMode (%02x)", msg.getType());
-        mSettings.killMode = msg.getParam<KillModeValue>(); break;
+        mSettings.killMode = msg.getParam<KillModeValue>();
+        break;
     case CommandFromControlboxType::Sensitivity:
     {
         ESP_LOGI("JarvisSerial", "Incoming message: Sensitivity (%02x)", msg.getType());
@@ -178,7 +219,8 @@ void JarvisDesk::extractSetting(const SerialMessage& msg)
     }
     case CommandFromControlboxType::Height:
         ESP_LOGI("JarvisSerial", "!!!Incoming message: Height (%02x)", msg.getType());
-        sHeight->publish_state(msg.getParam<uint16_t>()); break;
+        lastReportedHeight = msg.getParam<uint16_t>();
+        sHeight->publish_state(lastReportedHeight); break;
     default:
         ESP_LOGW("JarvisSerial", "Got unknown message: (%02x)", msg.getType());
         // ESP_LOGV("JarvisSerial", "Got unknown message: %s", msg.toString().c_str());
@@ -192,21 +234,20 @@ void JarvisDesk::processResponse(uint32_t duration)
     ct.start();
     while (!ct.isFinished())
     {
-        handleCombined();
+        handleIncomingData();
     }
 }
 
 void JarvisDesk::sendMessage(const SerialMessage& msg, uint8_t reps)
 {
-    // ESP_LOGD("JarvisSerial", "Sending message: %s", msg.toString().c_str());
+    ESP_LOGV("JarvisSerial", "Sending message: %s", msg.toString().c_str());
 
     switch (msg.getSourceId())
     {
     case SourceType::Handset:
-        mCombined.sendMessage(msg, reps);
+        sendMessageRaw(msg, reps);
         break;
     case SourceType::Controlbox:
-        //  mCombined.sendMessage(msg, reps);
         // this will not work, we are not connected to handset, we are the handset  
         ESP_LOGE("JarvisSerial", "Error: Cannot send a message to handset!");
         break;
@@ -218,6 +259,17 @@ void JarvisDesk::sendMessage(const SerialMessage& msg, uint8_t reps)
 void JarvisDesk::sendMessage(const SerialMessage&& msg, uint8_t reps)
 {
     sendMessage(msg, reps);
+}
+
+void JarvisDesk::sendMessageRaw(const SerialMessage& msg, uint8_t repetition)
+{
+    uint8_t packet[MAX_PACKET_SIZE];
+    msg.construct(packet);
+
+    for (int i = 0; i < repetition; ++i)
+
+        // call the esphome uart write_array fn directly
+        write_array(packet, msg.getPacketLength());
 }
 
 void JarvisDesk::wakeUp()
@@ -353,7 +405,7 @@ void JarvisDesk::setSensitivity(const char* value)
 void JarvisDesk::move(uint16_t height)
 {
     // Hysteresis correction
-    if (height > mCombined.getLastReportedHeight())
+    if (height > lastReportedHeight)
         height += 2;
     sendMessage(SerialMessage(CommandFromHandsetType::MoveTo, 
                               static_cast<uint16_t>(height)));

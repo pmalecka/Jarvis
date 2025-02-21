@@ -1,7 +1,6 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <Arduino.h>
 #include <string>
 
 enum class UnitsValue : uint8_t
@@ -49,9 +48,8 @@ enum class SensitivityValue : uint8_t
     Unkown     = 0xFF
 };
 
-String char2hex(uint8_t c);
-
-String array2String(uint8_t *packet, size_t packetSize);
+std::string char2hex(uint8_t value);
+std::string array2String(uint8_t *packet, size_t packetSize);
 
 std::string valToString(UnitsValue units);
 std::string valToString(UserLimitSetValue limits);

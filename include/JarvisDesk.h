@@ -1,7 +1,12 @@
 #ifndef JARVISDESK_H
 #define JARVISDESK_H
 
-#include "CombinedHandler.h"
+#include "esphome/components/uart/uart.h"
+#include "esphome/core/defines.h"
+#include "esphome/core/component.h"
+
+#include "SerialDevice.h"
+#include "SerialMessage.h"
 #include "Timer.h"
 #include "utils.h"
 #include "esphome.h"
@@ -108,15 +113,15 @@ struct Settings
 };
 
 
-class JarvisDesk : public Component
+class JarvisDesk : public Component, public esphome::uart::UARTDevice
 {
 public:
-    JarvisDesk();
+    JarvisDesk(esphome::uart::UARTComponent *parent);
 
     void setup() override;
     void loop() override;
 
-    void handleCombined();
+    void handleIncomingData();
 
     void processResponse(uint32_t duration=100);
 
@@ -180,7 +185,12 @@ private:
 
     bool deskInitialized;
 
-    CombinedHandler mCombined;
+    SerialDevice serialDecoder;
+    
+    uint16_t lastReportedHeight;
+
+    bool fetchMessage(SerialMessage& msg);
+    void sendMessageRaw(const SerialMessage& msg, uint8_t repetition);
 };
 
 #endif   // JARVISDESK_H

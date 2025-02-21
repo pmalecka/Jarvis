@@ -24,12 +24,9 @@ esphome:
       - logger.log: "Hello World"
 
 esp32:
-  ## lolin_s3 board has issue with usb_cdc enabled on boot ("-DARDUINO_USB_CDC_ON_BOOT=1"), this causes the hw serial not to work
-  # board: lolin_s3
-  board: esp32-s3-devkitc-1
-  variant: esp32s3
+  board: lolin_s3
   framework:
-    type: arduino
+    type: esp-idf
 
   
 
@@ -66,18 +63,19 @@ wifi:
 
 # captive_portal:
 
-# Http request for Shelly trv
-http_request:
-  useragent: esphome/device
-  timeout: 2s
-  follow_redirects: false
-
-# uart:
-#   - id: jarvis_uart
-#     tx_pin: 18
-#     rx_pin: 17
-#     baud_rate: 9600
-#     rx_buffer_size: 1024
+uart:
+  - id: jarvis_uart
+    tx_pin:
+      number: 8
+      inverted: false
+    rx_pin:
+      number: 11
+      inverted: false
+      mode:
+        input: true
+        pullup: false
+    baud_rate: 9600
+    # rx_buffer_size: 1024
 #     debug:
 #       direction: BOTH
 #       dummy_receiver: true

@@ -1,19 +1,26 @@
 #include "utils.h"
 
-String char2hex(uint8_t c)
-{
-  String ret = String((c < 16 ? "0" : "") + String(c, HEX));
-  ret.toUpperCase();
-  return ret;
+std::string char2hex(uint8_t value) {
+    char buffer[3]; // 2 characters for hex representation + 1 for null terminator
+
+    // snprintf safely writes to the buffer, ensuring no overflow
+    std::snprintf(buffer, sizeof(buffer), "%02x", value);
+
+    // Construct a std::string from the buffer
+    // The std::string constructor copies the content of buffer
+    return std::string(buffer);
 }
 
-String array2String(uint8_t *packet, size_t packetSize)
+std::string array2String(uint8_t *packet, size_t packetSize)
 {
-    String result = "";
-    for (size_t i = 0; i < packetSize; ++i)
-    {
-        result += char2hex(packet[i]) + ":";
+    std::string result;
+    result.reserve(packetSize);  // Reserve space to avoid multiple allocations
+
+    for (size_t i = 0; i < packetSize; ++i) {
+        result += char2hex(packet[i]);
+        if(i+1 < packetSize) result += ":";
     }
+
     return result;
 }
 

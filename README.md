@@ -2,11 +2,25 @@
 
 This project is a ESPHome component for [fully's Jarvis standing desk](https://www.fully.com/standing-desks/jarvis.html). 
 
-It enables Home Assistant to control the desk and get data out of it. It has all the features from the official handset and more. It's a man-in-the-middle device to control all UART messages between the desk's controller and the handset.
+It enables Home Assistant to control the desk and get data out of it. It has all the features from the official handset and more. 
+This connects to a RJ-11 port on the controlbox marked **"F"**
 
 ### Backstory
-Originally I wanted to be able to control the desk from a Home Assistant automation so I started looking if there are any projects that has done this already. Luckily, I came across [Phil Hord's IoT project](https://github.com/phord/Jarvis), which I strongly recommend to check out. He has done the reverse engineering of the communication and the wiring that I extensively used to create this project. In the beginning I tried to make that work for Home Assistant but during that I realized that I could probably use the screen for other things (temperature, humidity, stock market changes?).
+Originally I wanted to be able to control the desk from a Home Assistant automation so I started looking if there are any projects that has done this already. 
+Luckily, I came across [Phil Hord's IoT project](https://github.com/phord/Jarvis), which I strongly recommend to check out. He has done the reverse engineering of the communication and the wiring that I extensively used to create this project.
 
+I looked at the controller and googled the part number. Found out that there is another connector there marked as **"F"**.
+I poked around Jiecang's website and read through some user manuals. It turns out, that the connector can be used to add Bluetooth capability to the desk.
+
+https://www.jiecang.com/JCP35N-BLT-pd44755680.html
+
+https://fccid.io/2ANKDJCP35NBLT/External-Photos/External-Photos-3727738
+
+https://fccid.io/2ANKDJCP35NBLT/Internal-Photos/Internal-Photos-3727739
+
+https://fccid.io/2ANKDJCP35NBLT/User-Manual/Users-Manual-3727745
+
+https://play.google.com/store/apps/details?id=com.jiecang.app.android.aidesks&hl=en&gl=US
 So I started reverse engineer it even further. I discovered, through fuzzing about 2 dozen of message types that were not used by neither the controller nor the handset in the stock configuration and managed to exploit some bugs as well that I found during the journey. With all that knowledge I decided to implement a man-in-the-middle device that captures all traffic and is able to inject fake messages into both of the data streams.
 
 There were 3 things I wanted to have: (1) The ability to turn the screen on anytime for notification (this I think is impossible). (2) Always-on display to show numbers without activating the screen. I really didn't like touching it twice to move it. (3) Custom numbers on the display to have something more useful than the current height, which is almost completely useless for me.
@@ -14,27 +28,14 @@ There were 3 things I wanted to have: (1) The ability to turn the screen on anyt
 
 ## Features
 
-* All controls that the handset provides
-* Capture all and inject fake UART messages
-* Always-on LCD display
-* Custom number display (0-180)
+* Send messages to the controlbox, obtain current status of the desk
+* Handset still works, as if nothing is even there
 * ESPHome configuration
-
-Exploit that has been implemented so far:
-
-* Always-on LCD display
-
-Exploits that has not yet been implemented:
-
-* Always-on leds with no display
-* Always off leds and display but active handset. "Dark mode"
-
 
 ## Technical notes
 
 Check out [Phil's repository](https://github.com/phord/Jarvis) for details on the wiring and the communication protocol.
-
-[Google Sheet containing all the notes I took](https://docs.google.com/spreadsheets/d/1GKZfDFljVX4eQBMawq0-Rc8t0x8V6gjQ5BgAYngPYTo/edit?usp=sharing) 
+Check out [Dániel's repository](https://github.com/maraid/Jarvis) for inspiration, and details about the protocol
 
 Important findings:
 * The "handset control lines" are unnecessary. Everything can be done via UART messages.
@@ -60,7 +61,7 @@ Important findings:
 #### Requirements:
 
 * [Home Assistant](https://www.home-assistant.io/)
-* Wemos D1 Mini. Or whatever ESP8266 board you find at home.
+* Wemos D1 Mini Pro clone has a borked HW serial, so I ended up using Lolin S3 (a huge overkill)
 * A bit of soldering.
 
 In progress...

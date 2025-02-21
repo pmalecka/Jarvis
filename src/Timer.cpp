@@ -15,8 +15,8 @@ bool Timer::start()
 {
     if (mState == TimerStateType::NotStarted)
     {
-        mStart = millis();
-        mFinish = millis() + mDuration;
+        mStart = esphome::millis();
+        mFinish = esphome::millis() + mDuration;
         mState = TimerStateType::Running;
         return true;
     }
@@ -42,7 +42,7 @@ void Timer::reset()
 
 void Timer::tick()
 {
-    if (mState == TimerStateType::Running && millis() >= mFinish)
+    if (mState == TimerStateType::Running && esphome::millis() >= mFinish)
     {
         mState = TimerStateType::Finished;
     }
