@@ -38,7 +38,7 @@ bool SerialDevice::processData(uint8_t oktet)
             else
             {
                 mSMState = StateMachineState::Start;
-                esphome::ESP_LOGE("JarvisStateMachine", "Got UNexpected Id octet %02x", oktet);
+                esphome::ESP_LOGE("JarvisStateMachine", "Got Unexpected Id octet %02x", oktet);
             }
             break;
         }
